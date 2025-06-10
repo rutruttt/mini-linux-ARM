@@ -1,0 +1,38 @@
+//the DEFAULT configuration for vscode in WSL mode:
+/*
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**" // This covers all your project's local headers
+
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c17",
+            "cppStandard": "gnu++17",
+            //"intelliSenseMode" is autocompleted... works without it too
+        }
+    ],
+    "version": 4
+}
+*/
+
+{
+    "configurations": [
+        {
+            "name": "WSL-ARM", // Changed from "Win32" to reflect your setup
+            "includePath": [
+                "${workspaceFolder}/**" // This covers all your project's local headers
+
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/arm-none-eabi-g++", // Path to your GCC compiler in WSL
+            //btw, /usr/bin/arm-none-eabi-g++ is exactly the same as /usr/bin/arm-none-eabi-c++ lol.
+            "cStandard": "c11", 
+            "cppStandard": "c++17" 
+        }
+    ],
+    "version": 4
+}

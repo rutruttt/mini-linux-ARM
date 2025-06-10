@@ -133,7 +133,7 @@ extern "C" int _read(int fd, char *buf, int len) {
 }
 
 FileEntry* find_file(const char*); //from main
-FileEntry* create_file(const char* name, FileType type);
+FileEntry* create_file(const char* name, mode_t type);
 extern "C" int _open(const char *name, int flags, ...) {
     if (name == nullptr) {
         errno = EFAULT;
@@ -163,7 +163,7 @@ extern "C" int _open(const char *name, int flags, ...) {
             return -1;
         }
 
-        entry=create_file(name,REGULAR);
+        entry=create_file(name,S_IFREG);
         if (entry == nullptr) {
             errno = ENOSPC; // No space left on device (no free fileTable entry)
             return -1;
@@ -172,7 +172,7 @@ extern "C" int _open(const char *name, int flags, ...) {
 
     // Handle existing file
     // Cannot open directory for writing or truncating
-    if (entry->type == DIRECTORY) {
+    if (entry->type == S_IFDIR) {       //equivalent: if (S_ISDIR(entry->type))
         if (!(flags & O_RDONLY) || flags & O_TRUNC) {
             errno = EISDIR; // trying to open directory for writing/truncate a directory
             return -1;
@@ -207,8 +207,33 @@ extern "C" int _close(int fd) {
 
 //FROM NOW ON: printf/fptintf recursively reference to them, but not depend on their behavior
 //namely FUNCTION FROM NOW ON ARE NOT NEEDED FOR MY SYSTEM AT ALL (in a sense that a trivial implementation is enough)
-//i just give some a full implementation to like practice??
+//and to prove it here are some stupid ass implementations. below are the serious ones.
 
+extern "C" void* _sbrk(int incr) {
+    return nullptr;
+}
+extern "C" int _fstat(int file, struct stat *st) {
+    return -1;
+}
+extern "C" int _isatty(int file) {
+    return false;
+}
+
+extern "C" int _lseek(int file, int ptr, int dir) {
+    return -55;
+}
+
+extern "C" int _getpid() {
+    return -666;
+}
+
+extern "C" int _kill(int pid, int sig) {
+    return 1;
+}
+
+extern "C" void _exit(int status) {}
+
+/*
 // _sbrk(int incr)
 // For memory allocation (heap). `malloc` uses this.
 extern "C" void* _sbrk(int incr) {
@@ -249,11 +274,14 @@ extern "C" int _fstat(int file, struct stat *st) {
     }
 
     FileEntry* entry = openFiles[file].entry;
-    if (entry->type == DIRECTORY) {
-        st->st_mode = S_IFDIR;
-    } else {
-        st->st_mode = S_IFREG;
-        st->st_size = entry->fileSize;
+    if (entry == nullptr || !entry->status) {
+        errno = EBADF;
+        return -1;
+    }
+    
+    st->st_mode = entry->type;
+    if (S_ISREG(entry->type)) { // Only regular files have a size
+        st->st_size = entry->fileSize; // Set file size for regular files
     }
     return 0;
 }
@@ -261,7 +289,7 @@ extern "C" int _fstat(int file, struct stat *st) {
 // _isatty implementation (needed by printf)
 extern "C" int _isatty(int file) {
     if (!is_fd_active(file))
-        return 0; // Return 0 (false) if not a valid FD or not a TTY
+        return false; // Return false if not a valid FD or not a TTY
     return (file < 3); // Only stdin/stdout/stderr are terminals
 }
 
@@ -315,3 +343,4 @@ extern "C" void _exit(int status) {
     // A simple infinite loop prevents the program from returning unexpectedly.
     while(1);
 }
+*/

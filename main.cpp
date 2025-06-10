@@ -22,11 +22,11 @@ extern bool IS_BASH_BUILTIN_ERROR;
 void report_shell_error(const char* command, const char* operand, int err_code);
 
 //global variables (will be placed in .bss because they arent initialized -- wait but what about fileTable)
-char path_buffer[MAX_PATH];
-char line_buffer[MAX_LINE];
-char command_name[MAX_LINE];
-char argv[MAX_ARGS][MAX_NAME];  //i wanted to do "char* argv[MAX_ARGS]" but then ill need dynamic allocation and i dont have a heap:((((
-int argc;                       //always needs to be <MAX_ARGS
+static char path_buffer[MAX_PATH];
+static char line_buffer[MAX_LINE];
+static char command_name[MAX_LINE];
+static char argv[MAX_ARGS][MAX_NAME];  //i wanted to do "char* argv[MAX_ARGS]" but then ill need dynamic allocation and i dont have a heap:((((
+static int argc;                       //always needs to be <MAX_ARGS
 FileEntry fileTable[NUM_FILES]{}; //using the default constructor which is already purrfect :3
 
 FileDescriptorInfo openFiles[MAX_FD];
@@ -48,7 +48,7 @@ void initialize_filesystem() {
 
     currentDirEntry = fileTable;  //POINTER to fileTable[0]. its like writing "currentDirEntry = fileTable+0"
     //create root directory
-    fileTable[0].SetNewFile("", DIRECTORY);
+    fileTable[0].SetNewFile("", S_IFDIR);
 
     for (FileDescriptorInfo & fdInfo : openFiles)
         fdInfo.entry=nullptr;
@@ -118,7 +118,7 @@ FileEntry* find_file(const char* name) {
     }
     return nullptr;
 }
-FileEntry* create_file(const char* name, FileType type) {
+FileEntry* create_file(const char* name, mode_t type) {
     for (int i = 0; i < NUM_FILES; i++) {
         if (!fileTable[i].status) {
             fileTable[i].SetNewFile(name, type);
@@ -226,7 +226,7 @@ void ls()   //i implement only ls that doesnt take any argument :3
 int cat_from_file(int fd, char* buf)   //we enter here only when we KNOW that (openFiles[fd].entry != nullptr)
 {
     //if (S_ISDIR(st.st_mode)) { // S_ISDIR is a macro from sys/stat.h
-    if (openFiles[fd].entry->type == DIRECTORY) {
+    if (openFiles[fd].entry->type == S_IFDIR) {
         errno = EISDIR;
         return -1;
     }
@@ -298,7 +298,7 @@ void rm() {
     for (int i = 0; i < argc; ++i) {
         FileEntry* entry = find_file(argv[i]);
         if (entry) //if file does exist then delete it, otherwise theres just no need
-            if (entry->type==DIRECTORY){
+            if (entry->type==S_IFDIR){
                 errno = EISDIR;
                 report_shell_error(command_name, argv[i], errno);
             }
@@ -319,7 +319,7 @@ void mkdir() {
             report_shell_error(command_name, argv[i], errno);
         }
         else
-            create_file(argv[i],DIRECTORY);
+            create_file(argv[i],S_IFDIR);
     }
 }
 
@@ -351,7 +351,7 @@ void cd() {
         report_shell_error(command_name, argv[0], errno); //changed entry->name to argv[0] to avoid nullptr dereference if entry is null
         return;
     }
-    if (entry->type!=DIRECTORY) {
+    if (entry->type!=S_IFDIR) {
         errno = ENOTDIR;
         IS_BASH_BUILTIN_ERROR = true; 
         report_shell_error(command_name, argv[0], errno);
@@ -366,6 +366,14 @@ extern "C" void main() {
     init_uart();
     initialize_filesystem();
     setvbuf(stdout, nullptr, _IONBF, 0);
+
+    //memory layout checks
+    /*
+    openFiles[1].entry = nullptr; 
+    printf("IS_BASH_BUILTIN_ERROR: it IS initialized but to 0 so compiler places it in .bss :(((( thats why i need to zero the .bss section in startup.S...\n");
+    printf("address (you can see in the linker that its in .bss and not .data): %X, IS_BASH_BUILTIN_ERROR = %d\n",&IS_BASH_BUILTIN_ERROR,IS_BASH_BUILTIN_ERROR);
+    printf("supposed to be in .bss (uninitialized): %X, %X, %X\n",path_buffer,line_buffer,fileTable);
+    */
 
     while (true) {
         //RESET REDIRECTIONS for the new command

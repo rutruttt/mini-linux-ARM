@@ -3,9 +3,9 @@ TEXT_BASE = 0x00010000;
 RODATA_BASE = 0x00400000;
 DATA_BASE = 0x00800000;
 BSS_BASE = 0x00C00000;
-PROVIDE(STACK_TOP = 0x00FFFFFC);
 PROVIDE(FILESTORAGE_BASE = 0x01000000);
 PROVIDE(FILESTORAGE_TOP = 0x07000000);
+PROVIDE(STACK_TOP = 0x07FFFFFC);
 
 PROVIDE(UART_BASE = 0x10009000);  
 
@@ -13,7 +13,7 @@ ENTRY(_start)
 
 SECTIONS
 {
-    /* Text section */
+    /* text section */
     . = TEXT_BASE;
     .text : {
     	*(.text*)
@@ -23,23 +23,24 @@ SECTIONS
     	*(.v4_bx)
     }
 
-    /* Read-only data */
+    /* read-only data */
     . = RODATA_BASE;
     .rodata : {
         *(.rodata*)
         *(.gnu.linkonce.r.*)
     }
 
-    /* Initialized data */
+    /* initialized data */
     . = DATA_BASE;
     .data : {
         *(.data*)
     }
 
-    /* Uninitialized data */
-    . = BSS_BASE;
+    /* uninitialized data..... plus zeroed variable unfortunately. the compiler forces it, so i must zero the bss myself lol */
     .bss : {
+        _sbss = .;          /* Start of .bss section */
         *(.bss*)
         *(COMMON)
+        _ebss = .;          /* End of .bss section */
     }
 }

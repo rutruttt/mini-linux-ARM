@@ -1,7 +1,7 @@
 #include <cstdio> // For fprintf, stderr
 #include <cerrno>
 
-bool IS_BASH_BUILTIN_ERROR; //in my system - only parsing (redirections) and "cd" are bash-builtins lol
+bool IS_BASH_BUILTIN_ERROR = false; //in my system - only parsing (redirections) and "cd" are bash-builtins lol
 
 // Function to print a user-friendly error message based on errno
 void report_shell_error(const char* command, const char* operand, int err_code) {

@@ -16,7 +16,9 @@ SECTIONS
     /* text section */
     . = TEXT_BASE;
     .text : {
-    	*(.text*)
+    	*(.text.startup)        /* If you added a specific section to _start in startup.S (good practice) */
+        startup.o(.text)        /* Explicitly place startup.o's .text section first */
+        *(.text*)               /* All other .text sections from other object files */
     	*(.gnu.linkonce.t.*)
     	*(.glue_7) *(.glue_7t)
     	*(.vfp11_veneer)

@@ -9,8 +9,6 @@ PROVIDE(STACK_TOP = 0x07FFFFFC);
 
 PROVIDE(UART_BASE = 0x101F1000);  /* VersatilePB UART */
 
-ENTRY(_start)
-
 SECTIONS
 {
     /* text section */

@@ -42,7 +42,7 @@ to compile mini-linux.bin:
 > 
 > arm-none-eabi-objcopy -O binary mini-linux.elf mini-linux.bin
 
-then load it into the emulation device in address 0x0, like in the emulation command i mentioned above. addr=0x0 is the default for the device loader, so this command is enough:
+then load it into the emulation device in address 0x0, like in the emulation command i mentioned above. addr=0x0 is the default for the device loader, so it's redundant:
 
 > QEMU_AUDIO_DRV=none qemu-system-arm -M versatilepb -nographic -serial mon:stdio -device loader,file=mini-linux.bin 2>/dev/null
 
@@ -55,13 +55,22 @@ emulating with a kernel makes the setup easier; instead of a fixed execution sta
 >
 > qemu-system-arm -M versatilepb -nographic -serial mon:stdio -kernel mini-linux.elf 2>/dev/null
 
+<br /> 
 
-
-
-GIVEN NO ENTRY FROM THE LINKER (like in versatilepb.ld and versatilepb-broken.ld): the execution start point is the device's default. namely its the same as the no-kernel case - mini-linux.elf compiled with versatilepb.ld will emulate properly, but mini-linux.elf compiled with versatilepb-broken.ld will not:
+#### GIVEN NO ENTRY FROM THE LINKER (like in versatilepb.ld and versatilepb-broken.ld):
+the execution start point is the device's default. namely its the same as the no-kernel case - mini-linux.elf compiled with versatilepb.ld will emulate properly, but mini-linux.elf compiled with versatilepb-broken.ld will not:
 
 > arm-none-eabi-as -c startup.S -o startup.o
 > 
 > arm-none-eabi-g++ -ffreestanding -nostdlib -fno-exceptions -fno-rtti -T versatilepb.ld main.cpp StringUtilities.cpp PL011-uart.cpp FileEntry.cpp newlib-syscalls.cpp ShellUtilities.cpp startup.o -o mini-linux.elf -Wl,--start-group -lgcc -lc -Wl,--end-group
 > 
 > qemu-system-arm -M versatilepb -nographic -serial mon:stdio -kernel mini-linux.elf 2>/dev/null                 #yes, this emulates properly!
+
+## compilation flags
+
+* -ffreestanding: for a freestanding environment - do not use any default startup code. the compiler's default startup code requires "int main", therefore without -freestanding a compilation error will occur for defining "void main" instead of "int main".
+* -nostdlib: dont link the default system libraries automatically. i will specify to the linker only what i need (in the library linkage flags).
+* -fno-exceptions, -fno-rtti: disabling c++ features that my code doesnt use, so i dont need them (exception handling, runtime type information).
+
+#### library linkage flags:
+-lc (libc.a), -lgcc (libgcc.a).

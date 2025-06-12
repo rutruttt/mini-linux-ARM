@@ -3,6 +3,7 @@
 #include "uart.h"
 #include "Constants.h"
 #include "FileDescriptorInfo.h"
+#include "ShellUtilities.h"
 
 #include <cerrno>
 #include <cstdio> 
@@ -18,16 +19,13 @@ extern "C" int _read(int fd, char *buf, int len);
 extern "C" int _write(int fd, const char *buf, int len);
 */
 
-extern bool IS_BASH_BUILTIN_ERROR;
-void report_shell_error(const char* command, const char* operand, int err_code);
-
 //global variables (will be placed in .bss because they arent initialized -- wait but what about fileTable)
 static char path_buffer[MAX_PATH];
 static char line_buffer[MAX_LINE];
 static char command_name[MAX_LINE];
-static char argv[MAX_ARGS][MAX_NAME];  //i wanted to do "char* argv[MAX_ARGS]" but then ill need dynamic allocation and i dont have a heap:((((
+static char argv[MAX_ARGS][MAX_NAME];  //i wanted to do "char* argv[MAX_ARGS]" but then ill need dynamic allocation (sucks)
 static int argc;                       //always needs to be <MAX_ARGS
-FileEntry fileTable[NUM_FILES]{}; //using the default constructor which is already purrfect :3
+FileEntry fileTable[NUM_FILES]{};  //using the default constructor which is already purrfect :3
 
 FileDescriptorInfo openFiles[MAX_FD];
 
@@ -233,7 +231,7 @@ int cat_from_file(int fd, char* buf)   //we enter here only when we KNOW that (o
 
     int bytes_read;
     while ((bytes_read = _read(fd, buf, MAX_LINE)) > 0) //cant read more than the fuckin buffer SIZE
-        _write(1, buf, bytes_read); // Write to stdout (fd=1)
+        _write(1, buf, bytes_read); //write to stdout (fd=1)
     //read returns -1 if had a problem in reading (bytes_read=-1), otherwise returns the number of bytes it reads.
     //namely if reading succeeds - because the loop is while bytes_read > 0, it will end exactly at bytes_read=0
 
